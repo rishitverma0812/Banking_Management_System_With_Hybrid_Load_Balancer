@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apna Bank - Enhanced Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background-color: #f0f2f5;
+      color: #333;
+    }
+    .navbar {
+      margin-bottom: 20px;
+    }
+    .dashboard-section {
+      padding: 50px 0;
+    }
+    .card {
+      margin-bottom: 20px;
+      border: none;
+      border-radius: 15px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .feature {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 2rem;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    .feature:hover {
+      transform: scale(1.05);
+    }
+    .feature img {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 1rem;
+    }
+    .feature h3 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .feature p {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    .footer {
+      background-color: #343a40;
+      color: white;
+      text-align: center;
+      padding: 1rem 0;
+      margin-top: auto;
+    }
+    .quick-links, .notifications, .dashboard, .promotions, .recent-activity, .news-updates, .feedback {
+      margin-bottom: 2rem;
+    }
+    .quick-links a, .notifications a, .promotions a, .news-updates a {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #007bff;
+      text-decoration: none;
+    }
+    .quick-links a:hover, .notifications a:hover, .promotions a:hover, .news-updates a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">Apna Bank</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="account.html">Account</a></li>
+          <li class="nav-item"><a class="nav-link" href="transfer.html">Transfer</a></li>
+          <li class="nav-item"><a class="nav-link" href="transactions.html">Transactions</a></li>
+          <li class="nav-item"><a class="nav-link" href="profile.html">Profile</a></li>
+          <li class="nav-item"><a class="nav-link" href="notifications.html">Notifications</a></li>
+          <li class="nav-item"><a class="nav-link" href="promotions.html">Promotions</a></li>
+          <li class="nav-item"><a class="nav-link" href="feedback.html">Feedback</a></li>
+          <li class="nav-item"><a class="nav-link" href="login.html">Login</a></li>
+          <li class="nav-item"><a class="nav-link" href="signup.html">Signup</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Dashboard Overview -->
+  <section class="dashboard-section py-5">
+    <div class="container">
+      <h2 class="text-center mb-4">Dashboard Overview</h2>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Account Balance</h5>
+              <p class="card-text">₹ 50,000.00</p>
+              <a href="transfer.html" class="btn btn-primary">Transfer Funds</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Recent Transactions</h5>
+              <ul>
+                <li>Transaction 1</li>
+                <li>Transaction 2</li>
+                <li>Transaction 3</li>
+                <li>Transaction 4</li>
+                <li>Transaction 5</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Dashboard Analytics -->
+  <section class="dashboard py-5">
+    <div class="container">
+      <h2 class="text-center mb-4">Dashboard Analytics</h2>
+      <div class="row">
+        <div class="col-md-12">
+          <!-- Placeholder for graphical representation -->
+          <canvas id="dashboardChart" class="img-fluid"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>&copy; 2023 Apna Bank. All rights reserved.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Example of using Chart.js for interactive charts
+    const ctx = document.getElementById('dashboardChart').getContext('2d');
+    const dashboardChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+        datasets: [{
+          label: 'Balance Over Time',
+          data: [50000, 52000, 48000, 53000, 55000, 57000, 59000],
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 2,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          title: {
+            display: true,
+            text: 'Account Balance Trend'
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

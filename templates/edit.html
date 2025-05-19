@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apna Bank - Edit Profile</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background-color: #f8f9fa;
+      color: #333;
+    }
+    .navbar {
+      margin-bottom: 20px;
+    }
+    .navbar-brand img {
+      width: 50px;
+      height: auto;
+      margin-left: -15px;
+    }
+    .edit-profile-section {
+      padding: 50px 0;
+      background-color: #e9ecef;
+    }
+    .edit-profile-section h2 {
+      color: #007bff;
+    }
+    .edit-profile-card {
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+    .btn-primary {
+      background-color: #007bff;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
+    footer {
+      background-color: #343a40;
+      color: white;
+      text-align: center;
+      padding: 1rem 0;
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('account') }}">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Apna Bank Logo">
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('edit_profile') }}">Profile</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('transfer') }}">Transfer</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('transactions') }}">Transactions</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('contact') }}">Contact Us</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Edit Profile Section -->
+  <section class="edit-profile-section py-5">
+    <div class="container">
+      <h2 class="text-center mb-4">Edit Profile</h2>
+      <div class="edit-profile-card mx-auto" style="max-width: 600px;">
+        <form method="POST" action="{{ url_for('edit_profile') }}">
+          <div class="mb-3">
+            <label for="profileImage" class="form-label">Profile Image</label>
+            <input type="file" class="form-control" id="profileImage">
+          </div>
+          <div class="mb-3">
+            <label for="fullName" class="form-label">Full Name</label>
+            <input type="text" class="form-control" id="fullName" name="full_name" value="{{ user['full_name'] }}">
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label">Email address</label>
+            <input type="email" class="form-control" id="email" name="email" value="{{ user['email'] }}">
+          </div>
+          <div class="mb-3">
+            <label for="phone" class="form-label">Phone Number</label>
+            <input type="tel" class="form-control" id="phone" name="phone" value="{{ user['phone'] }}">
+          </div>
+          <div class="mb-3">
+            <label for="address" class="form-label">Address</label>
+            <textarea class="form-control" id="address" name="address" rows="3">{{ user['address'] }}</textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-white text-center py-3">
+    <p>&copy; 2023 Apna Bank. All rights reserved.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>

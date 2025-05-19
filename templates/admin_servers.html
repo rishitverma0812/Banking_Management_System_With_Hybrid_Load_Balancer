@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apna Bank - Account Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .dashboard-card {
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+        .amount-text {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        .transaction-item {
+            border-left: 4px solid transparent;
+        }
+        .transaction-item.incoming {
+            border-left-color: #28a745;
+        }
+        .transaction-item.outgoing {
+            border-left-color: #dc3545;
+        }
+        .server-status {
+            font-size: 0.75rem;
+        }
+        .active-badge {
+            font-size: 0.7rem;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-landmark me-2"></i>Apna Bank
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('account') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('transactions') }}">Transactions</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('transfer') }}">Transfer</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('contact') }}">Contact</a>
+                    </li>
+                    {% if current_user.username == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_servers') }}">
+                            <i class="fas fa-server me-1"></i>Server Admin
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>{{ full_name }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#">Profile</a></li>
+                            <li><a class="dropdown-item" href="#">Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container mt-3">
+        <p class="text-danger">Debug: Current User - {{ current_user.username }}</p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container my-4">
+        <!-- Welcome Card with Balance -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card dashboard-card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="card-title">Welcome back, {{ full_name }}!</h5>
+                                <p class="card-text">Your current balance is:</p>
+                                <p class="amount-text">₹<span id="current-balance">{{ "%.2f"|format(initial_balance) }}</span></p>
+                            </div>
+                            <div class="col-md-4 text-md-end">
+                                <a href="{{ url_for('transfer') }}" class="btn btn-light mb-2 me-2">
+                                    <i class="fas fa-paper-plane me-1"></i>Transfer Money
+                                </a>
+                                <a href="{{ url_for('transactions') }}" class="btn btn-outline-light">
+                                    <i class="fas fa-history me-1"></i>View All Transactions
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Stats -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <div class="stat-icon text-primary">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <h3 id="totalTransactions">--</h3>
+                    <p class="text-muted mb-0">Total Transactions</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <div class="stat-icon text-success">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <h3 id="totalIncoming">--</h3>
+                    <p class="text-muted mb-0">Total Incoming (₹)</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <div class="stat-icon text-danger">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                    <h3 id="totalOutgoing">--</h3>
+                    <p class="text-muted mb-0">Total Outgoing (₹)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions and Server Status -->
+        <div class="row">
+            <!-- Recent Transactions -->
+            <div class="col-lg-8">
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Recent Transactions</h5>
+                            <a href="{{ url_for('transactions') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Balance</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-transactions">
+                                    <!-- Transactions will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Server Status -->
+            <div class="col-lg-4">
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Server Status</h5>
+                            {% if current_user.username == 'admin' %}
+                            <a href="{{ url_for('admin_servers') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% for server in servers %}
+                        <div class="server-status mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div>
+                                    <span class="fw-bold">Server #{{ server.id }}</span>
+                                    <span class="active-badge ms-2 badge {% if server.response_time < 100 %}bg-success{% elif server.response_time < 500 %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {% if server.response_time < 100 %}Healthy{% elif server.response_time < 500 %}Warning{% else %}Critical{% endif %}
+                                    </span>
+                                </div>
+                                <small class="text-muted">{{ server.active_connections }} connections</small>
+                            </div>
+                            <div class="progress" style="height: 5px;">
+                                <div class="progress-bar {% if server.response_time < 100 %}bg-success{% elif server.response_time < 500 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                     style="width: { (server.response_time / 1000) * 100 }%">
+                                </div>
+                            </div>
+                            <small class="text-muted">Response: {{ server.response_time|round(2) }} ms</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card dashboard-card">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('transfer') }}" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i>Transfer Money
+                            </a>
+                            <a href="#" class="btn btn-outline-secondary">
+                                <i class="fas fa-sliders-h me-2"></i>Account Settings
+                            </a>
+                            <a href="{{ url_for('contact') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-headset me-2"></i>Contact Support
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container my-4">
+        <h3 class="mb-4">Account Metrics</h3>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Username</th>
+                        <th>Total Transactions</th>
+                        <th>Total Incoming (₹)</th>
+                        <th>Total Outgoing (₹)</th>
+                    </tr>
+                </thead>
+                <tbody id="account-metrics">
+                    <tr>
+                        <td colspan="4" class="text-center">Loading account metrics...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <div class="container">
+            <p class="mb-0">© 2025 Apna Bank - Secure Banking Platform</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Get current balance
+            $.ajax({
+                url: '/api/get-balance',
+                type: 'GET',
+                success: function(data) {
+                    if (data.balance !== undefined) {
+                        $('#current-balance').text(data.balance.toFixed(2));
+                    }
+                }
+            });
+
+            // Get last 5 transactions
+            $.ajax({
+                url: '/api/get-last-5-transactions',
+                type: 'GET',
+                success: function(data) {
+                    const transactions = data.transactions;
+                    $('#recent-transactions').empty();
+                    
+                    let totalIncoming = 0;
+                    let totalOutgoing = 0;
+                    
+                    if (transactions && transactions.length > 0) {
+                        transactions.forEach(function(transaction) {
+                            // Calculate totals
+                            if (transaction.transaction_type === 'incoming') {
+                                totalIncoming += parseFloat(transaction.amount);
+                            } else if (transaction.transaction_type === 'outgoing') {
+                                totalOutgoing += parseFloat(transaction.amount);
+                            }
+                            
+                            // Create table row
+                            const row = `
+                                <tr class="transaction-item ${transaction.transaction_type}">
+                                    <td>
+                                        <span class="badge ${transaction.transaction_type === 'incoming' ? 'bg-success' : 'bg-danger'}">
+                                            ${transaction.transaction_type === 'incoming' ? 'Received' : 'Sent'}
+                                        </span>
+                                    </td>
+                                    <td>₹${parseFloat(transaction.amount).toFixed(2)}</td>
+                                    <td>₹${parseFloat(transaction.dynamic_balance).toFixed(2)}</td>
+                                    <td>${new Date(transaction.time_of_transaction).toLocaleDateString()}</td>
+                                </tr>
+                            `;
+                            $('#recent-transactions').append(row);
+                        });
+                        
+                        // Update stats
+                        $('#totalTransactions').text(transactions.length);
+                        $('#totalIncoming').text('₹' + totalIncoming.toFixed(2));
+                        $('#totalOutgoing').text('₹' + totalOutgoing.toFixed(2));
+                    } else {
+                        $('#recent-transactions').append(`
+                            <tr>
+                                <td colspan="4" class="text-center">No recent transactions found</td>
+                            </tr>
+                        `);
+                        $('#totalTransactions').text('0');
+                        $('#totalIncoming').text('₹0.00');
+                        $('#totalOutgoing').text('₹0.00');
+                    }
+                },
+                error: function(error) {
+                    console.error('Error fetching transactions:', error);
+                    $('#recent-transactions').append(`
+                        <tr>
+                            <td colspan="4" class="text-center text-danger">Error loading transactions</td>
+                        </tr>
+                    `);
+                }
+            });
+            
+            // Get all transactions for stats
+            $.ajax({
+                url: '/api/get-user-transactions',
+                type: 'GET',
+                success: function(data) {
+                    const transactions = data.transactions;
+                    if (transactions) {
+                        $('#totalTransactions').text(transactions.length);
+                        
+                        let totalIncoming = 0;
+                        let totalOutgoing = 0;
+                        
+                        transactions.forEach(function(transaction) {
+                            if (transaction.transaction_type === 'incoming') {
+                                totalIncoming += parseFloat(transaction.amount);
+                            } else if (transaction.transaction_type === 'outgoing') {
+                                totalOutgoing += parseFloat(transaction.amount);
+                            }
+                        });
+                        
+                        $('#totalIncoming').text('₹' + totalIncoming.toFixed(2));
+                        $('#totalOutgoing').text('₹' + totalOutgoing.toFixed(2));
+                    }
+                }
+            });
+
+            // Fetch account metrics
+            $.ajax({
+                url: '/api/get-all-user-transactions',
+                type: 'GET',
+                success: function(data) {
+                    const users = data.users;
+                    const metricsTable = $('#account-metrics');
+                    metricsTable.empty();
+
+                    if (users && users.length > 0) {
+                        users.forEach(function(user) {
+                            const row = `
+                                <tr>
+                                    <td>${user.username}</td>
+                                    <td>${user.total_transactions}</td>
+                                    <td>₹${parseFloat(user.total_incoming).toFixed(2)}</td>
+                                    <td>₹${parseFloat(user.total_outgoing).toFixed(2)}</td>
+                                </tr>
+                            `;
+                            metricsTable.append(row);
+                        });
+                    } else {
+                        metricsTable.append('<tr><td colspan="4" class="text-center">No data available</td></tr>');
+                    }
+                },
+                error: function(error) {
+                    console.error('Error fetching account metrics:', error);
+                    $('#account-metrics').html('<tr><td colspan="4" class="text-center text-danger">Error loading account metrics</td></tr>');
+                }
+            });
+
+            // Auto refresh server status every 30 seconds
+            setInterval(function() {
+                $.ajax({
+                    url: '/metrics',
+                    type: 'GET',
+                    success: function(data) {
+                        // Update server status if needed
+                    }
+                });
+            }, 30000);
+        });
+    </script>
+</body>
+</html>

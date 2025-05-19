@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Apna Bank</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      margin: 0;
+    }
+    main {
+      flex: 1;
+    }
+    footer {
+      background-color: #343a40;
+      color: white;
+      text-align: center;
+      padding: 1rem 0;
+    }
+    .card {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border: none;
+    }
+    .navbar-brand {
+      font-weight: bold;
+    }
+    .balance-display {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #4CAF50;
+    }
+    .dashboard-section {
+      margin-top: 20px;
+    }
+    .chart-container {
+      position: relative;
+      height: 300px;
+    }
+    .tab-content {
+      margin-top: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    th {
+      background-color: #f2f2f2;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <i class="fas fa-landmark me-2"></i>Apna Bank
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="{{ url_for('account') }}">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('transactions') }}">Transactions</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('transfer') }}">Transfer</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('contact') }}">Contact</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-1"></i>{{ full_name }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{{ url_for('edit_profile') }}">Profile</a></li>
+                        <li><a class="dropdown-item" href="#">Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-3">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+
+<div class="container my-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card dashboard-card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="card-title">Welcome back, {{ full_name }}!</h5>
+                            <p class="card-text">Your current balance is:</p>
+                            <p class="amount-text">₹<span id="current-balance">{{ "%.2f"|format(initial_balance) }}</span></p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <a href="{{ url_for('transfer') }}" class="btn btn-light mb-2 me-2">
+                                <i class="fas fa-paper-plane me-1"></i>Transfer Money
+                            </a>
+                            <a href="{{ url_for('transactions') }}" class="btn btn-outline-light">
+                                <i class="fas fa-history me-1"></i>View All Transactions
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="stat-icon text-primary">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <h3 id="totalTransactions">--</h3>
+                <p class="text-muted mb-0">Total Transactions</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="stat-icon text-success">
+                    <i class="fas fa-arrow-down"></i>
+                </div>
+                <h3 id="totalIncoming">--</h3>
+                <p class="text-muted mb-0">Total Incoming (₹)</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card">
+                <div class="stat-icon text-danger">
+                    <i class="fas fa-arrow-up"></i>
+                </div>
+                <h3 id="totalOutgoing">--</h3>
+                <p class="text-muted mb-0">Total Outgoing (₹)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card dashboard-card mb-4">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Recent Transactions</h5>
+                        <a href="{{ url_for('transactions') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Balance</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-transactions">
+                                <tr>
+                                    <td colspan="4" class="text-center">Loading transactions...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card dashboard-card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('transfer') }}" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>Transfer Money
+                        </a>
+                        <a href="#" class="btn btn-outline-secondary">
+                            <i class="fas fa-sliders-h me-2"></i>Account Settings
+                        </a>
+                        <a href="{{ url_for('contact') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-headset me-2"></i>Contact Support
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="bg-dark text-white text-center py-3 mt-5">
+    <div class="container">
+        <p class="mb-0">© 2025 Apna Bank - Secure Banking Platform</p>
+    </div>
+</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Function to fetch the latest balance
+    async function fetchBalance() {
+      try {
+        const response = await fetch('/api/get-balance');
+        if (!response.ok) {
+          throw new Error('Failed to fetch balance');
+        }
+        const data = await response.json();
+        document.getElementById('balance-display').textContent = '₹' + data.balance.toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+        const now = new Date();
+        document.getElementById('last-updated').textContent = `Last updated at ${now.toLocaleTimeString()}`;
+      } catch (error) {
+        console.error('Error fetching balance:', error);
+      }
+    }
+
+    // Function to fetch and display the last 5 recent transactions
+    async function fetchRecentTransactions() {
+  try {
+    const response = await fetch('/api/get-last-5-transactions');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch transactions: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    const recentTransactionsTable = document.getElementById('recent-transactions');
+    recentTransactionsTable.innerHTML = ''; // Clear existing rows
+    
+    if (data.transactions && data.transactions.length > 0) {
+      // Populate the table with transaction rows
+      data.transactions.forEach(transaction => {
+        const row = document.createElement('tr');
+        
+        const typeCell = document.createElement('td');
+        typeCell.textContent = transaction.transaction_type;
+        typeCell.className = transaction.transaction_type === 'incoming' ? 'text-success' : 'text-danger';
+        
+        const amountCell = document.createElement('td');
+        amountCell.textContent = '₹' + parseFloat(transaction.amount).toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+        
+        const balanceCell = document.createElement('td');
+        balanceCell.textContent = '₹' + parseFloat(transaction.dynamic_balance).toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+        
+        const timeCell = document.createElement('td');
+        timeCell.textContent = transaction.time_of_transaction;
+        
+        row.appendChild(typeCell);
+        row.appendChild(amountCell);
+        row.appendChild(balanceCell);
+        row.appendChild(timeCell);
+        
+        recentTransactionsTable.appendChild(row);
+      });
+    } else {
+      recentTransactionsTable.innerHTML = '<tr><td colspan="4" class="text-center">No recent transactions found</td></tr>';
+    }
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    document.getElementById('recent-transactions').innerHTML = 
+      '<tr><td colspan="4" class="text-center text-danger">Error loading transactions</td></tr>';
+  }
+}
+
+    // Function to render the balance chart
+    function renderBalanceChart() {
+      const ctx = document.getElementById('balanceChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], // Example labels
+          datasets: [{
+            label: 'Balance Over Time',
+            data: [50000, 52000, 48000, 51000, 53000, 55000], // Example data
+            borderColor: '#4CAF50',
+            backgroundColor: 'rgba(76, 175, 80, 0.2)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top'
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Months'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Balance (₹)'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Function to fetch balance data for the chart
+    async function fetchBalanceData() {
+      try {
+        const response = await fetch('/api/get-balance-history');
+        if (!response.ok) {
+          throw new Error('Failed to fetch balance history');
+        }
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Error fetching balance history:', error);
+        return null;
+      }
+    }
+
+    // Function to render the balance chart dynamically
+    async function renderDynamicBalanceChart() {
+      const data = await fetchBalanceData();
+      if (!data) return;
+
+      const ctx = document.getElementById('balanceChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.labels, // Example: ['Jan', 'Feb', 'Mar']
+          datasets: [{
+            label: 'Balance Over Time',
+            data: data.balances, // Example: [50000, 52000, 48000]
+            borderColor: '#4CAF50',
+            backgroundColor: 'rgba(76, 175, 80, 0.2)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top'
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Time'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Balance (₹)'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Function to fetch user transactions
+    async function fetchTransactions() {
+      try {
+        const response = await fetch('/api/get-user-transactions');
+        if (!response.ok) {
+          throw new Error('Failed to fetch transactions');
+        }
+        const data = await response.json();
+        const transactionList = document.getElementById('transaction-list');
+        
+        if (data.transactions && data.transactions.length > 0) {
+          transactionList.innerHTML = '';
+          data.transactions.forEach(transaction => {
+            const row = document.createElement('tr');
+            
+            const typeCell = document.createElement('td');
+            typeCell.textContent = transaction.transaction_type;
+            typeCell.className = transaction.transaction_type === 'incoming' ? 'text-success' : 'text-danger';
+            
+            const amountCell = document.createElement('td');
+            amountCell.textContent = '₹' + parseFloat(transaction.amount).toLocaleString('en-IN', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            });
+            
+            const balanceCell = document.createElement('td');
+            balanceCell.textContent = '₹' + parseFloat(transaction.dynamic_balance).toLocaleString('en-IN', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            });
+            
+            const timeCell = document.createElement('td');
+            timeCell.textContent = transaction.time_of_transaction;
+            
+            row.appendChild(typeCell);
+            row.appendChild(amountCell);
+            row.appendChild(balanceCell);
+            row.appendChild(timeCell);
+            
+            transactionList.appendChild(row);
+          });
+        } else {
+          transactionList.innerHTML = '<tr><td colspan="4" class="text-center">No transactions found</td></tr>';
+        }
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+        document.getElementById('transaction-list').innerHTML = 
+          '<tr><td colspan="4" class="text-center text-danger">Error loading transactions</td></tr>';
+      }
+    }
+    
+    // Function to update the balance on the page and in the database
+    async function updateBalance(newBalance) {
+      try {
+        // Update the balance in the database
+        const response = await fetch('/api/update-balance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ balance: newBalance })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update balance in the database');
+        }
+
+        // Update the balance on the page
+        document.getElementById('balance-display').textContent = '₹' + newBalance.toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+
+        console.log('Balance updated successfully');
+      } catch (error) {
+        console.error('Error updating balance:', error);
+      }
+    }
+
+    // Function to handle money transfer
+    document.getElementById('transfer-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const recipient = document.getElementById('recipient').value;
+      const amount = document.getElementById('amount').value;
+      const statusDiv = document.getElementById('transfer-status');
+      
+      statusDiv.textContent = 'Processing transfer...';
+      statusDiv.className = 'alert alert-info';
+      
+      try {
+        const response = await fetch('/api/transfer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recipient, amount }),
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          statusDiv.textContent = 'Transfer successful!';
+          statusDiv.className = 'alert alert-success';
+          document.getElementById('transfer-form').reset();
+          fetchBalance(); // Update balance after transfer
+          fetchTransactions(); // Update transaction history
+          fetchRecentTransactions(); // Update recent transactions
+        } else {
+          statusDiv.textContent = `Transfer failed: ${data.error || 'Unknown error'}`;
+          statusDiv.className = 'alert alert-danger';
+        }
+      } catch (error) {
+        console.error('Error during transfer:', error);
+        statusDiv.textContent = 'Transfer failed: Network error';
+        statusDiv.className = 'alert alert-danger';
+      }
+    });
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      fetchBalance();
+      fetchRecentTransactions();
+      updateTransactionCounters(); // Add this line
+      renderBalanceChart();
+      renderDynamicBalanceChart();
+  // Only fetch transactions if the tab is active
+      if (document.getElementById('transactions-tab').classList.contains('active')) {
+        fetchTransactions();
+    }
+    });
+    // Initialize tabs
+    document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(tab => {
+      tab.addEventListener('shown.bs.tab', function (event) {
+        if (event.target.id === 'transactions-tab') {
+          fetchTransactions();
+        }
+      });
+    });
+
+    // Fetch data on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      fetchBalance();
+      fetchRecentTransactions();
+      renderBalanceChart();
+      renderDynamicBalanceChart();
+      // Only fetch transactions if the tab is active
+      if (document.getElementById('transactions-tab').classList.contains('active')) {
+        fetchTransactions();
+      }
+    });
+
+    // Set up periodic balance refresh (every 30 seconds)
+    setInterval(fetchBalance, 30000);
+  </script>
+</body>
+</html>
